@@ -6,75 +6,94 @@ struct PaywallView: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.55)
+            Color.black.opacity(0.7)
                 .ignoresSafeArea()
                 .background(.ultraThinMaterial)
-                .onTapGesture(perform: onDismiss)
 
-            VStack(spacing: 24) {
-                VStack(spacing: 10) {
-                    Text("UNLOCK UNLIMITED PROGRESSION")
-                        .font(.title3.weight(.bold))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.white)
+            VStack(spacing: 0) {
+                Spacer()
 
-                    Text("One-time payment. Own it forever. No subscriptions.")
-                        .font(.subheadline)
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(Color.white.opacity(0.6))
+                VStack(spacing: 28) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.neonGreen.opacity(0.12))
+                            .frame(width: 80, height: 80)
+                        Image(systemName: "crown.fill")
+                            .font(.system(size: 32))
+                            .foregroundStyle(Color.neonGreen)
+                    }
+
+                    VStack(spacing: 10) {
+                        Text("UNLOCK UNLIMITED\nPROGRESSION")
+                            .font(AppFont.hero(24))
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(.white)
+
+                        Text("One-time payment. Own it forever.\nNo subscriptions.")
+                            .font(.subheadline)
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(Color.mutedText)
+                    }
+
+                    VStack(spacing: 14) {
+                        PaywallFeatureRow(icon: "infinity", text: "Track unlimited exercises")
+                        PaywallFeatureRow(icon: "chart.line.uptrend.xyaxis", text: "Smart automated overload calculation")
+                        PaywallFeatureRow(icon: "heart.fill", text: "Support indie development")
+                    }
+                    .padding(.vertical, 8)
+
+                    Button(action: onUnlock) {
+                        Text("Unlock Forever — $2.99")
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button("Not now", action: onDismiss)
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(Color.mutedText)
                 }
-
-                VStack(alignment: .leading, spacing: 12) {
-                    PaywallBullet(text: "Track unlimited exercises")
-                    PaywallBullet(text: "Smart automated overload calculation")
-                    PaywallBullet(text: "Support indie development")
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                Button(action: onUnlock) {
-                    Text("Unlock Forever — $2.99")
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.black)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .buttonStyle(.plain)
-
-                Button("Not now", action: onDismiss)
-                    .font(.footnote)
-                    .foregroundStyle(Color.white.opacity(0.5))
+                .padding(32)
+                .background(
+                    RoundedRectangle(cornerRadius: AppTheme.cornerRadiusLarge, style: .continuous)
+                        .fill(Color.cardGrey)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppTheme.cornerRadiusLarge, style: .continuous)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+                .padding(.horizontal, 20)
+                .padding(.bottom, 40)
             }
-            .padding(28)
-            .background {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(.ultraThinMaterial)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color.black.opacity(0.85))
-                    )
-            }
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color.white.opacity(0.12), lineWidth: 0.75)
-            )
-            .padding(.horizontal, 24)
         }
-        .transition(.opacity.combined(with: .scale(scale: 0.98)))
+        .transition(.opacity.combined(with: .move(edge: .bottom)))
     }
 }
 
-private struct PaywallBullet: View {
+private struct PaywallFeatureRow: View {
+    let icon: String
     let text: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Text("•")
-                .foregroundStyle(Color.white.opacity(0.45))
+        HStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.neonGreen.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.neonGreen)
+            }
+
             Text(text)
                 .font(.subheadline)
-                .foregroundStyle(Color.white.opacity(0.55))
+                .foregroundStyle(Color.white.opacity(0.75))
+
+            Spacer()
         }
     }
 }

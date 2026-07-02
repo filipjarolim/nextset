@@ -12,12 +12,53 @@ final class WorkoutViewModel: ObservableObject {
 
     private var modelContext: ModelContext?
     private var restTimerTask: Task<Void, Never>?
-    private let defaultRestDuration = 90
+    let defaultRestDuration = 90
+    private var restTimerTotalSeconds: Int = 90
 
     var formattedRestTime: String {
         let minutes = restSecondsRemaining / 60
         let seconds = restSecondsRemaining % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+
+    var restProgress: Double {
+        guard restTimerTotalSeconds > 0 else { return 0 }
+        return 1 - (Double(restSecondsRemaining) / Double(restTimerTotalSeconds))
+    }
+
+    func completedSetsCount(for exercise: Exercise) -> Int {
+        exercise.sets.filter(\.isCompleted).count
+    }
+
+    func totalSetsCount(for exercise: Exercise) -> Int {
+        exercise.sets.count
+    }
+
+    func sessionVolume(for exercise: Exercise) -> Double {
+        exercise.sets
+            .filter(\.isCompleted)
+            .reduce(0) { $0 + ($1.weight * Double($1.reps)) }
+    }
+
+    func targetWeight(from exercise: Exercise) -> Double {
+        exercise.sets.map(\.weight).max() ?? 0
+    }
+
+    func chartPoints(for exercise: Exercise) -> [SessionChartPoint] {
+        exercise.sets
+            .sorted { $0.setNumber < $1.setNumber }
+            .map { set in
+                SessionChartPoint(
+                    id: set.setNumber,
+                    setNumber: set.setNumber,
+                    reps: set.reps,
+                    isCompleted: set.isCompleted
+                )
+            }
+    }
+
+    func maxReps(for exercise: Exercise) -> Int {
+        max(exercise.sets.map(\.reps).max() ?? 8, 8)
     }
 
     func configure(modelContext: ModelContext) {
@@ -108,6 +149,7 @@ final class WorkoutViewModel: ObservableObject {
         restTimerTask?.cancel()
 
         let seconds = duration ?? defaultRestDuration
+        restTimerTotalSeconds = seconds
         restSecondsRemaining = seconds
         isRestTimerVisible = true
 
@@ -127,6 +169,7 @@ final class WorkoutViewModel: ObservableObject {
 
     func addRestTime(_ seconds: Int = 30) {
         restSecondsRemaining += seconds
+        restTimerTotalSeconds += seconds
         if isRestTimerVisible == false {
             isRestTimerVisible = true
         }

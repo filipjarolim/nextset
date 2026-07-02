@@ -2,7 +2,11 @@ import SwiftUI
 
 extension Color {
     static let neonGreen = Color(hex: "00FF66")
+    static let neonGreenDim = Color(hex: "00CC52")
     static let cardGrey = Color(hex: "1C1C1E")
+    static let cardGreyElevated = Color(hex: "2C2C2E")
+    static let surfaceDark = Color(hex: "0A0A0A")
+    static let mutedText = Color(hex: "8E8E93")
 
     init(hex: String) {
         let sanitized = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

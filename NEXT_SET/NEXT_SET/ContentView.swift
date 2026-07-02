@@ -12,13 +12,12 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            Color.black
-                .ignoresSafeArea()
+            AmbientBackground()
 
             if let exercise = viewModel.activeExercise {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        HeaderBar {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: AppTheme.sectionSpacing) {
+                        HeaderBar(exerciseCount: exercises.count) {
                             handleAddTapped()
                         }
 
@@ -31,14 +30,32 @@ struct ContentView: View {
                             }
                         }
 
-                        ExerciseFocusCard(
+                        MetricSummaryRow(
+                            completedSets: viewModel.completedSetsCount(for: exercise),
+                            totalSets: viewModel.totalSetsCount(for: exercise),
+                            targetWeight: viewModel.targetWeight(from: exercise),
+                            volume: viewModel.sessionVolume(for: exercise)
+                        )
+
+                        ExerciseHeroCard(
                             exerciseName: exercise.name,
-                            lastWorkoutSummary: exercise.lastWorkoutSummary
+                            lastWorkoutSummary: exercise.lastWorkoutSummary,
+                            progress: sessionProgress(for: exercise)
                         )
 
                         TargetBanner(targetText: exercise.targetGoalString)
 
-                        VStack(spacing: 12) {
+                        ProgressChartView(
+                            points: viewModel.chartPoints(for: exercise),
+                            maxReps: viewModel.maxReps(for: exercise)
+                        )
+
+                        SectionHeader(
+                            title: "Today's Sets",
+                            trailing: "\(viewModel.completedSetsCount(for: exercise)) of \(viewModel.totalSetsCount(for: exercise)) done"
+                        )
+
+                        VStack(spacing: 10) {
                             ForEach(sortedSets(for: exercise), id: \.id) { set in
                                 SetRowView(
                                     set: set,
@@ -55,64 +72,46 @@ struct ContentView: View {
                             }
                         }
 
-                        if viewModel.isRestTimerVisible {
-                            RestTimerBanner(
-                                timeText: viewModel.formattedRestTime,
-                                onAddTime: {
-                                    viewModel.addRestTime(30)
-                                },
-                                onDismiss: {
-                                    viewModel.dismissRestTimer()
-                                }
-                            )
-                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: viewModel.isRestTimerVisible)
-                        }
-
-                        Spacer(minLength: 24)
+                        Spacer(minLength: viewModel.isRestTimerVisible ? 280 : 40)
                     }
                     .padding(AppTheme.horizontalPadding)
+                    .padding(.top, 8)
                 }
             } else {
-                VStack(spacing: 16) {
-                    HeaderBar {
+                VStack(spacing: 0) {
+                    HeaderBar(exerciseCount: 0) {
                         handleAddTapped()
                     }
                     .padding(.horizontal, AppTheme.horizontalPadding)
+                    .padding(.top, 8)
 
-                    Spacer()
-
-                    Text("No exercises yet")
-                        .font(.headline)
-                        .foregroundStyle(Color.white.opacity(0.5))
-
-                    Button("Add your first exercise") {
+                    EmptyStateView {
                         handleAddTapped()
                     }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.black)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.neonGreen)
-                    .clipShape(Capsule())
-
-                    Spacer()
                 }
             }
 
+            if viewModel.isRestTimerVisible {
+                RestTimerOverlay(
+                    timeText: viewModel.formattedRestTime,
+                    progress: viewModel.restProgress,
+                    onAddTime: { viewModel.addRestTime(30) },
+                    onDismiss: { viewModel.dismissRestTimer() }
+                )
+                .animation(.spring(response: 0.45, dampingFraction: 0.85), value: viewModel.isRestTimerVisible)
+            }
+
             if viewModel.restTimerFlash {
-                Color.neonGreen.opacity(0.12)
+                Color.neonGreen.opacity(0.15)
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
+                    .transition(.opacity)
             }
 
             if subscriptionManager.showPaywall {
                 PaywallView(
-                    onUnlock: {
-                        subscriptionManager.triggerPurchase()
-                    },
-                    onDismiss: {
-                        subscriptionManager.dismissPaywall()
-                    }
+                    onUnlock: { subscriptionManager.triggerPurchase() },
+                    onDismiss: { subscriptionManager.dismissPaywall() }
                 )
             }
         }
@@ -135,14 +134,18 @@ struct ContentView: View {
     }
 
     private func handleAddTapped() {
-        guard subscriptionManager.requestAddExercise(currentCount: exercises.count) else {
-            return
-        }
+        guard subscriptionManager.requestAddExercise(currentCount: exercises.count) else { return }
         showAddExerciseSheet = true
     }
 
     private func sortedSets(for exercise: Exercise) -> [WorkoutSet] {
         exercise.sets.sorted { $0.setNumber < $1.setNumber }
+    }
+
+    private func sessionProgress(for exercise: Exercise) -> Double {
+        let total = viewModel.totalSetsCount(for: exercise)
+        guard total > 0 else { return 0 }
+        return Double(viewModel.completedSetsCount(for: exercise)) / Double(total)
     }
 }
 
